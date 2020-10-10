@@ -27,6 +27,7 @@ namespace Syncthing
             })
             .ConfigureServices((hostBuilderContext, services) =>
             {
+                services.AddSingleton<EndPointFactory>();
                 services.AddHostedService<SyncService>();
             });
     }
