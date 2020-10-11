@@ -11,11 +11,12 @@ using Serilog;
 
 namespace Syncthing
 {
-    public class Program
+    public class Program2
     {
-        public static void Main(string[] args)
+        public static void Main2(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            // CreateHostBuilder(args).Build().Run();
+
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

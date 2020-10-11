@@ -137,18 +137,18 @@ namespace Syncthing
 
         private void ProcessCommand(in ReadOnlySequence<byte> buffer, Stream stream)
         {
-            buffer.
-            var command = Encoding.UTF8.GetString(buffer.ToArray());
+            // buffer.
+            // var command = Encoding.UTF8.GetString(buffer.ToArray());
 
-            switch (command)
-            {
-                case "LIST":
-                    {
-                        stream.WriteAsync();
-                    }
-                default:
+            // switch (command)
+            // {
+            //     case "LIST":
+            //         {
+            //             stream.WriteAsync();
+            //         }
+            //     default:
 
-            }
+            // }
         }
 
         public async Task Listen()
