@@ -16,21 +16,16 @@ namespace TcpSocketTest
 
         public static void Main(string[] args)
         {
-            if (args.Length > 0)
-            {
-                Task.WaitAll(
-                    Enumerable
-                        .Range(0, 10)
-                        .Select(x =>
-                            Task.Run(() => { RunClients().GetAwaiter().GetResult(); })
-                        )
-                        .ToArray()
-                );
-            }
-            else
-            {
-                RunServer().GetAwaiter().GetResult();
-            }
+            var _ = RunServer();
+
+            Task.Delay(1000).GetAwaiter().GetResult();
+            Task.WaitAll(
+                Enumerable
+                    .Range(0, 10)
+                    .Select(x => RunClients())
+                    .ToArray()
+            );
+            Task.Delay(-1).GetAwaiter().GetResult();
         }
 
         public static async Task RunServer()
@@ -101,6 +96,9 @@ namespace TcpSocketTest
                 var result = await reader.ReadAsync();
 
                 var buffer = result.Buffer;
+
+                var pos = buffer.PositionOf((byte)'\n');
+                // buffer.TryGet(ref pos.Value, out ReadOnlyMemory<byte> memory);
 
                 Console.WriteLine(clientId.ToString() + ":" + Encoding.UTF8.GetString(buffer.ToArray()));
 

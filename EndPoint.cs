@@ -15,12 +15,13 @@ namespace Syncthing
     public class EndPoint
     {
         private IPEndPoint master;
-
         private bool isMaster;
-
         private List<IPEndPoint> connections;
-
         private ILogger<EndPoint> logger;
+        // private static int FrameLengthSize = 4;
+        // private static int FrameTypeSize = 4;
+        // private static int HeaderSize = FrameLengthSize + FrameTypeSize;
+        private static byte[] CRLF = new byte[] { (byte)'\r', (byte)'\n' };
 
         public EndPoint(IPEndPoint master, ILogger<EndPoint> logger)
         {
@@ -34,8 +35,13 @@ namespace Syncthing
         {
             return Task.WhenAll(
                 Listen(),
-                ConnectTo(this.master)
+                SyncMaster()
             );
+        }
+
+        private async Task SyncMaster()
+        {
+            await ConnectTo(this.master);
         }
 
         public async Task ConnectTo(IPEndPoint target)
@@ -46,11 +52,7 @@ namespace Syncthing
 
             var stream = client.GetStream();
 
-#pragma warning disable CS4014
-            PipeStream(stream);
-#pragma warning restore CS4014
-
-            // connections.Add(target, (pipe, stream));
+            var _ = PipeStream(stream);
 
             await stream.WriteAsync(Commands.LIST);
         }
@@ -109,20 +111,11 @@ namespace Syncthing
 
                 var buffer = result.Buffer;
 
-                SequencePosition? pos = null;
-
-                do
+                Frame frame;
+                while (TryReadFrame(buffer, out frame))
                 {
-                    pos = buffer.PositionOf((byte)'\r');
-
-                    if (pos != null)
-                    {
-                        ProcessCommand(buffer.Slice(0, pos.Value), stream);
-
-                        buffer = buffer.Slice(buffer.GetPosition(2 /* skip \r\n */, pos.Value));
-                    }
+                    ProcessFrame(frame);
                 }
-                while (pos != null);
 
                 reader.AdvanceTo(buffer.Start, buffer.End);
 
@@ -135,7 +128,37 @@ namespace Syncthing
             reader.Complete();
         }
 
-        private void ProcessCommand(in ReadOnlySequence<byte> buffer, Stream stream)
+        private bool TryReadFrame(in ReadOnlySequence<byte> buffer, out Frame frame)
+        {
+            // frameLength = 0;
+
+            frame = null;
+
+            return false;
+        }
+
+        private bool TryReadHeader(in ReadOnlySequence<byte> buffer, out int frameLength, out string frameType)
+        {
+            int headerLength = 0;
+
+            var pos = buffer.PositionOf(CRLF);
+            if (pos == null)
+            {
+                frameLength = 0;
+                frameType = null;
+                return false;
+            }
+
+            
+            
+        }
+
+        private void SendFrame(Stream stream, Frame frame)
+        {
+
+        }
+
+        private void ProcessFrame(Frame frame)
         {
             // buffer.
             // var command = Encoding.UTF8.GetString(buffer.ToArray());
