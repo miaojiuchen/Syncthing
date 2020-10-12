@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace Syncthing
         // private static int FrameLengthSize = 4;
         // private static int FrameTypeSize = 4;
         // private static int HeaderSize = FrameLengthSize + FrameTypeSize;
-        private static byte[] CRLF = new byte[] { (byte)'\r', (byte)'\n' };
+        private static byte[] DoubleCRLF = new byte[] { (byte)'\r', (byte)'\n', (byte)'\r', (byte)'\n' };
 
         public EndPoint(IPEndPoint master, ILogger<EndPoint> logger)
         {
@@ -112,7 +113,7 @@ namespace Syncthing
                 var buffer = result.Buffer;
 
                 Frame frame;
-                while (TryReadFrame(buffer, out frame))
+                while (TryReadFrame(ref buffer, out frame))
                 {
                     ProcessFrame(frame);
                 }
@@ -128,29 +129,62 @@ namespace Syncthing
             reader.Complete();
         }
 
-        private bool TryReadFrame(in ReadOnlySequence<byte> buffer, out Frame frame)
+        private bool TryReadFrame(ref ReadOnlySequence<byte> buffer, out Frame frame)
         {
-            // frameLength = 0;
+            if (!TryReadHeader(ref buffer, out NameValueCollection header))
+            {
+                frame = null;
+                return false;
+            }
+
+            if (!long.TryParse(header["Content-Length"], out long contentLength))
+            {
+                throw new Exception("Frame parse error, Invalid Content-Length value");
+            }
+
+            frame = new Frame();
+            frame.ContentLength = contentLength;
+
+            frame.Body =
+
+            // contentLength
 
             frame = null;
 
             return false;
         }
 
-        private bool TryReadHeader(in ReadOnlySequence<byte> buffer, out int frameLength, out string frameType)
+        private bool TryReadHeader(ref ReadOnlySequence<byte> buffer, out NameValueCollection header)
         {
             int headerLength = 0;
 
-            var pos = buffer.PositionOf(CRLF);
+            SequencePosition? pos = buffer.PositionOf(DoubleCRLF);
             if (pos == null)
             {
-                frameLength = 0;
-                frameType = null;
+                header = null;
                 return false;
             }
 
-            
-            
+            var rawHeader = Encoding.UTF8.GetString(buffer.Slice(buffer.Start, pos.Value));
+
+            Console.WriteLine(rawHeader);
+            header = null;
+
+            buffer = buffer.Slice(buffer.GetPosition(2, pos.Value));
+
+            return true;
+        }
+
+        private bool TryReadBody(ref ReadOnlySequence<byte> buffer, long length, out byte[] body)
+        {
+            if (buffer.Length < length)
+            {
+                body = null;
+                return false;
+            }
+
+            body = buffer.Slice(0, length).ToArray();
+            return true;
         }
 
         private void SendFrame(Stream stream, Frame frame)

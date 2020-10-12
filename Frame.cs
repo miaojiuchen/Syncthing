@@ -3,7 +3,7 @@ namespace Syncthing
     public class Frame
     {
         public string Type;
-        public int ContentLength;
+        public long ContentLength;
         public byte[] Body;        
     }
 }
