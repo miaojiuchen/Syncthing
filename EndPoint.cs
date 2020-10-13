@@ -22,7 +22,7 @@ namespace Syncthing
         // private static int FrameLengthSize = 4;
         // private static int FrameTypeSize = 4;
         // private static int HeaderSize = FrameLengthSize + FrameTypeSize;
-        private static byte[] DoubleCRLF = new byte[] { (byte)'\r', (byte)'\n', (byte)'\r', (byte)'\n' };
+        private static byte[] DoubleCRLF = (FrameHeaderContants.NewLine + FrameHeaderContants.NewLine).Select(x => (byte)x).ToArray();
 
         public EndPoint(IPEndPoint master, ILogger<EndPoint> logger)
         {
@@ -142,22 +142,21 @@ namespace Syncthing
                 throw new Exception("Frame parse error, Invalid Content-Length value");
             }
 
+            if (!TryReadBody(ref buffer, contentLength, out byte[] body))
+            {
+                frame = null;
+                return false;
+            }
+
             frame = new Frame();
             frame.ContentLength = contentLength;
+            frame.Body = body;
 
-            frame.Body =
-
-            // contentLength
-
-            frame = null;
-
-            return false;
+            return true;
         }
 
         private bool TryReadHeader(ref ReadOnlySequence<byte> buffer, out NameValueCollection header)
         {
-            int headerLength = 0;
-
             SequencePosition? pos = buffer.PositionOf(DoubleCRLF);
             if (pos == null)
             {
@@ -170,7 +169,7 @@ namespace Syncthing
             Console.WriteLine(rawHeader);
             header = null;
 
-            buffer = buffer.Slice(buffer.GetPosition(2, pos.Value));
+            buffer = buffer.Slice(buffer.GetPosition(FrameHeaderContants.NewLine.Length, pos.Value));
 
             return true;
         }
@@ -184,12 +183,28 @@ namespace Syncthing
             }
 
             body = buffer.Slice(0, length).ToArray();
+
+            buffer = buffer.Slice(length);
+
             return true;
         }
 
-        private void SendFrame(Stream stream, Frame frame)
+        private async Task SendFrame(Stream stream, Frame frame)
         {
+            /*
+                Command: LIST
+                Content-Length: 12345678
 
+                XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            */
+            int totalSize = (int)(FrameHeaderContants.ContentLength.Length + FrameHeaderContants.Delimeter.Length + frame.ContentLength.ToString().Length +
+                            FrameHeaderContants.Type.Length + FrameHeaderContants.Delimeter.Length + frame.Type.Length +
+                            3 * FrameHeaderContants.NewLine.Length +
+                            frame.ContentLength);
+
+            var memory = MemoryPool<byte>.Shared.Rent(totalSize);
+            await stream.WriteAsync(memory.Memory.Slice(0, totalSize));
         }
 
         private void ProcessFrame(Frame frame)

@@ -15,8 +15,7 @@ namespace Syncthing
     {
         public static void Main2(string[] args)
         {
-            // CreateHostBuilder(args).Build().Run();
-
+            CreateHostBuilder(args).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
