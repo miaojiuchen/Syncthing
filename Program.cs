@@ -11,9 +11,9 @@ using Serilog;
 
 namespace Syncthing
 {
-    public class Program2
+    public class Program
     {
-        public static void Main2(string[] args)
+        public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
         }

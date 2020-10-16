@@ -40,6 +40,7 @@ namespace Syncthing
 
             var node = this.endpointFactory.Create(masterEndpoint);
 
+            Console.WriteLine("Node running...");
             return node.Run();
         }
     }

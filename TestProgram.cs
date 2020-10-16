@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -14,18 +15,23 @@ namespace TcpSocketTest
     {
         static int port = 10086;
 
-        public static void Main(string[] args)
+        public static void Main2(string[] args)
         {
-            var _ = RunServer();
+            var nvc = new NameValueCollection();
+            nvc.Add("key", "value,");
+            nvc.Add("key", "value2");
+            Console.WriteLine(nvc["key"]);
+            Console.WriteLine(nvc["key_not_exist"]);
+            // var _ = RunServer();
 
-            Task.Delay(1000).GetAwaiter().GetResult();
-            Task.WaitAll(
-                Enumerable
-                    .Range(0, 10)
-                    .Select(x => RunClients())
-                    .ToArray()
-            );
-            Task.Delay(-1).GetAwaiter().GetResult();
+            // Task.Delay(1000).GetAwaiter().GetResult();
+            // Task.WaitAll(
+            //     Enumerable
+            //         .Range(0, 10)
+            //         .Select(x => RunClients())
+            //         .ToArray()
+            // );
+            // Task.Delay(-1).GetAwaiter().GetResult();
         }
 
         public static async Task RunServer()
