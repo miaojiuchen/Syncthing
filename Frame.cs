@@ -16,7 +16,7 @@ namespace Syncthing
 
         public Frame(string command, byte[] body)
         {
-            this.ContentLength = body.Length;
+            this.ContentLength = body?.Length ?? 0;
             this.Body = body;
             this.Command = command;
         }
@@ -29,11 +29,12 @@ namespace Syncthing
                     this.ContentLength);
         }
 
-        public void GetBytes(Memory<byte> buffer)
+        public void Fill(Memory<byte> buffer)
         {
             var contentLengthHeaderLine = $"{FrameHeaderContants.ContentLength}{FrameHeaderContants.Delimeter}{this.ContentLength}{FrameHeaderContants.NewLine}";
-            var commandHeaderLine = $"{FrameHeaderContants.ContentLength}{FrameHeaderContants.Delimeter}{this.Command}{FrameHeaderContants.NewLine}";
+            var commandHeaderLine = $"{FrameHeaderContants.Command}{FrameHeaderContants.Delimeter}{this.Command}{FrameHeaderContants.NewLine}";
             var fullHeader = $"{contentLengthHeaderLine}{commandHeaderLine}{FrameHeaderContants.NewLine}";
+            Console.WriteLine($"Full Header: \n{fullHeader}");
             var headerSpan = Encoding.UTF8.GetBytes(fullHeader).AsSpan();
             headerSpan.CopyTo(buffer.Span);
             buffer = buffer.Slice(headerSpan.Length);

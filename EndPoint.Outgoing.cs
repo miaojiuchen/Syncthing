@@ -1,5 +1,6 @@
 namespace Syncthing
 {
+    using System;
     using System.Buffers;
     using System.Buffers.Binary;
     using System.IO;
@@ -9,6 +10,8 @@ namespace Syncthing
     {
         private async Task SendFrame(Stream stream, Frame frame)
         {
+            Console.WriteLine("Send Frame");
+
             /*
                 Content-Length: 12345678
                 Command: LIST
@@ -17,13 +20,14 @@ namespace Syncthing
                 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             */
             int totalSize = (int)frame.CalculateSize();
+            Console.WriteLine($"Total Size: {totalSize}");
 
             var memoryOwner = MemoryPool<byte>.Shared.Rent(totalSize);
 
             // need slice here, since Rent memory will give us extra bigger than totalSize
             var buffer = memoryOwner.Memory.Slice(0, totalSize);
 
-            frame.GetBytes(buffer);
+            frame.Fill(buffer);
 
             await stream.WriteAsync(buffer);
         }

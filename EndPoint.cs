@@ -42,12 +42,14 @@ namespace Syncthing
         {
             var client = new TcpClient(AddressFamily.InterNetwork);
             await client.ConnectAsync(target.Address, target.Port);
+            Console.WriteLine($"Connected to {target.Address}:{target.Port}");
             var stream = client.GetStream();
 
             var pipe = PipeStream(stream);
+            Console.WriteLine($"Stream Piped");
 
             await SendFrame(stream, new Frame("LIST", null));
-            
+            Console.WriteLine($"Sent LIST command");
             await pipe;
         }
 
